@@ -1,0 +1,147 @@
+<div id="editor" class="absolute h-full w-[50%]"></div>
+
+<div id="console" class="float-right h-full w-[50%] p-3 font-semibold text-lg">
+  <ul id="console-text"></ul>
+</div>
+<button id="execute" class="absolute right-[12px] top-[12px] float-right px-4 py-2 text-white font-semibold bg-sky-500 hover:bg-sky-400 transition rounded-md">Ejecutar</button>
+
+<%= javascript_include_tag "https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.4/ace.min.js" %>
+<%= javascript_include_tag "https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.4/ext-language_tools.min.js" %>
+
+<script>
+  const editor = document.querySelector("#editor");
+  const executeBtn = document.querySelector("#execute");
+  const consoleLogList = document.querySelector("#console-text");
+  const consoleMessages = [];
+
+  function saveCodeToLocalStorage() {
+    const userCode = codeEditor.getValue();
+    localStorage.setItem("userCode", userCode);
+  }
+
+  function loadCodeFromLocalStorage() {
+    const savedCode = localStorage.getItem("userCode");
+    if (savedCode) {
+      codeEditor.setValue(savedCode);
+    }
+  }
+
+  function clearConsoleScreen() {
+    consoleMessages.length = 0;
+
+    while (consoleLogList.firstChild) {
+      consoleLogList.removeChild(consoleLogList.firstChild)
+    }
+  }
+
+  function printExecution() {
+    consoleMessages.forEach(log => {
+      const newLogItem = document.createElement("li");
+      const newLogText = document.createElement("pre");
+
+      newLogText.className = ""
+      newLogText.textContent = `> ${log.message}`;
+
+      newLogItem.appendChild(newLogText);
+      consoleLogList.appendChild(newLogItem);
+    })
+  }
+
+  const codeEditor = ace.edit(editor, {
+    theme: "ace/theme/gruvbox",
+    mode: "ace/mode/python",
+    fontFamily: "IosevkaTerm NF",
+    fontSize: 23,
+    enableBasicAutocompletion: true,
+    enableLiveAutocompletion: true,
+  });
+
+  loadCodeFromLocalStorage()
+
+  executeBtn.addEventListener("click", () => {
+    saveCodeToLocalStorage()
+    clearConsoleScreen()
+    const userCode = codeEditor.getValue();
+
+    try {
+      new Function(userCode)();
+    } catch (err) {
+      console.error(err);
+    }
+
+    printExecution()
+  });
+
+  let console = (function (oldConsole) {
+    return {
+      formatArgsOutput: function(arg) {
+        let outputArgMessage;
+
+        switch(this.getType(arg)) {
+          case "string":
+            outputArgMessage = `"${arg}"`;
+            break;
+          case "object":
+            outputArgMessage = `Object ${JSON.stringify(arg)}`;
+            break;
+          case "array":
+            outputArgMessage = `Array ${JSON.stringify(arg)}`;
+            break;
+          case "date":
+            outputArgMessage = arg;
+            break;
+          default:
+            outputArgMessage = arg;
+            break;
+        }
+
+        return outputArgMessage;
+      },
+      getType: function(arg) {
+        if (typeof arg === "string") return "string";
+        if (typeof arg === "boolean") return "boolean";
+        if (typeof arg === "function") return "function";
+        if (typeof arg === "number") return "number";
+        if (typeof arg === "undefined") return "undefined";
+        if (typeof arg === "object" && arg instanceof Date) return "date";
+        if (typeof arg === "object" && !Array.isArray(arg)) return "object";
+        if (typeof arg === "object" && Array.isArray(arg)) return "array";
+      },
+      logMultiplesArguments: function(args) {
+        let currentLog = "";
+
+        args.forEach(arg => {
+          currentLog += this.formatArgsOutput(arg) + " ";
+        });
+
+        oldConsole.log.apply(oldConsole, args);
+
+        consoleMessages.push({
+          message: currentLog,
+        })
+      },
+      logSingleArgument: function(logItem) {
+        consoleMessages.push({
+          message: this.formatArgsOutput(logItem),
+        });
+      },
+      log: function(text) {
+        let args = Array.from(arguments);
+        return args.length === 1 ? this.logSingleArgument(text) : this.logMultiplesArguments(args);
+      },
+      info: function(text) {
+        oldConsole.info(text);
+      },
+      warn: function(text) {
+        oldConsole.warn(text);
+      },
+      error: function(err) {
+        oldConsole.error(err);
+        consoleMessages.push({
+          message: `${err.name}: ${err.message}`,
+        });
+      }
+    }
+  })(window.console)
+</script>
+
