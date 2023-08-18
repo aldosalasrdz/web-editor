@@ -2,12 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
-
 @layer components {
-  .btn-primary {
-    @apply py-2 px-4 bg-blue-200;
+  .editor-container {
+    @apply absolute top-0 right-0 bottom-0 left-0;
+  }
+
+  .editor-tabs {
+    @apply p-0 m-0 flex bg-neutral-700 text-white w-[50%] h-[40px];
+  }
+
+  .editor-tab {
+    @apply flex px-4 py-2 list-none bg-transparent items-center cursor-pointer outline-none flex-grow z-[1] border-r border-r-neutral-500;
+  }
+
+  .editor-tab--active {
+    @apply flex px-4 py-2 list-none bg-neutral-800 items-center cursor-pointer outline-none flex-grow z-[1] border-r border-r-neutral-500;
+  }
+
+  .editor {
+    @apply absolute top-[40px] right-0 left-0 bottom-0 w-[50%];
   }
 }
 
-*/
+

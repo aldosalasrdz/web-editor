@@ -1,9 +1,16 @@
-<div id="editor" class="absolute h-full w-[50%]"></div>
+<section class="editor-container">
+  <ul class="editor-tabs">
+    <li class="editor-tab editor-tab--active">index</li>
+    <li class="editor-tab">math</li>
+    <li class="editor-tab">dom</li>
+  </ul>
+  <div id="editor" class="editor"></div>
+</section>
 
 <div id="console" class="float-right h-full w-[50%] p-3 font-semibold text-lg">
   <ul id="console-text"></ul>
 </div>
-<button id="execute" class="absolute right-[12px] top-[12px] float-right px-4 py-2 text-white font-semibold bg-sky-500 hover:bg-sky-400 transition rounded-md">Ejecutar</button>
+<button id="execute" class="absolute right-[12px] top-[45px] float-right px-4 py-2 text-white font-semibold bg-sky-500 hover:bg-sky-400 transition rounded-md">Ejecutar</button>
 
 <%= javascript_include_tag "https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.4/ace.min.js" %>
 <%= javascript_include_tag "https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.4/ext-language_tools.min.js" %>
@@ -14,6 +21,8 @@
   const consoleLogList = document.querySelector("#console-text");
   const consoleMessages = [];
 
+  let activeFilename = "index.js"
+
   function saveCodeToLocalStorage() {
     const userCode = codeEditor.getValue();
     localStorage.setItem("userCode", userCode);
@@ -22,7 +31,7 @@
   function loadCodeFromLocalStorage() {
     const savedCode = localStorage.getItem("userCode");
     if (savedCode) {
-      codeEditor.setValue(savedCode);
+      codeEditor.setValue(savedCode, -1);
     }
   }
 
@@ -39,7 +48,6 @@
       const newLogItem = document.createElement("li");
       const newLogText = document.createElement("pre");
 
-      newLogText.className = ""
       newLogText.textContent = `> ${log.message}`;
 
       newLogItem.appendChild(newLogText);
@@ -49,14 +57,16 @@
 
   const codeEditor = ace.edit(editor, {
     theme: "ace/theme/gruvbox",
-    mode: "ace/mode/python",
-    fontFamily: "IosevkaTerm NF",
-    fontSize: 23,
+    mode: "ace/mode/javascript",
+    fontSize: 19,
     enableBasicAutocompletion: true,
     enableLiveAutocompletion: true,
   });
 
-  loadCodeFromLocalStorage()
+  function createNewEditorSession() {
+    const newSession = ace.createEditSession("", "ace/mode/javascript");
+    codeEditor.setSession(newSession);
+  }
 
   executeBtn.addEventListener("click", () => {
     saveCodeToLocalStorage()
@@ -70,6 +80,14 @@
     }
 
     printExecution()
+  });
+
+  const editorTabs = document.querySelectorAll(".editor-tab");
+
+  editorTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      createNewEditorSession();
+    });
   });
 
   let console = (function (oldConsole) {
